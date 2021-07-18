@@ -1,7 +1,11 @@
 import React, {useState} from 'react'
 import Form from '../../layouts/Form';
-import { Grid } from '@material-ui/core';
+import { ButtonGroup, Grid, InputAdornment, makeStyles, Button as MuiButton } from '@material-ui/core';
 import {Input, Select, Button} from '../../controls';
+import ReplayIcon from '@material-ui/icons/Replay';
+import RestaurantMenuIcon from '@material-ui/icons/RestaurantMenu';
+
+
 
 
 const pMethods = [
@@ -10,29 +14,20 @@ const pMethods = [
     {id: 'Card', title: 'Card'},
 ]
 
-const generateOrderNumber = () => Math.floor(100000 + Math.random() * 900000).toString();
-
-const getFreshModelObject = () => ({
-    orderMasterId: 0,
-    orderNumber: generateOrderNumber(),
-    customerId: 0,
-    pMethod: 'none',
-    gTotal: 0,
-    deletedOrderItemIds: '',
-    orderDetails: []
-})
-
-export default function OrderForm() {
-
-    const [values, setValues]= useState(getFreshModelObject());
-
-    const handleInputChange = e => {
-        const  {name, value} = e.target;
-        setValues({
-            ...values,
-            [name]: value
-        })
+const useStyles = makeStyles(theme => ({
+    adornmentText: {
+        '& .MuiTypography-root':{
+            color: '#f3b33d',
+            fontWeight: 'bolder',
+            fontSize: '1.5em'
+        }
     }
+}))
+
+export default function OrderForm(props) {
+
+    const {values, errors, handleInputChange} = props;
+    const classes = useStyles();
     return (
         <Form>
             <Grid container>
@@ -42,6 +37,11 @@ export default function OrderForm() {
                     label = "Order Number"
                     name = "orderNumber"
                     value = {values.orderNumber}
+                    InputProps = {{
+                        startAdornment: <InputAdornment
+                        className = {classes.adornmentText}
+                        position = "start">#</InputAdornment>
+                    }}
                     />
                     <Select
                     label = "Customer"
@@ -71,7 +71,23 @@ export default function OrderForm() {
                     label = "Grand Total"
                     name = "gTotal"
                     value = {values.gTotal}
+                    InputProps = {{
+                        startAdornment: <InputAdornment
+                        className = {classes.adornmentText}
+                        position = "start">$</InputAdornment>
+                    }}
                     />
+                    <ButtonGroup>
+                    <MuiButton
+                    size = "large"
+                    endIcon = {<RestaurantMenuIcon />}
+                    type = "submit">Submit</MuiButton> 
+
+                    <MuiButton
+                    size = "small"
+                    startIcon = {<ReplayIcon />}
+                    /> 
+                    </ButtonGroup>
                 </Grid>
             </Grid>
         </Form>
