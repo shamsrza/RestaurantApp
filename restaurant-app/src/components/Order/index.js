@@ -1,6 +1,9 @@
 import React from 'react'
 import OrderForm from './OrderForm';
 import { useForm } from '../../hooks/useForm';
+import { Grid } from '@material-ui/core';
+import SearchFoodItems from './SearchFoodItems';
+import OrderedFoodItems from './OrderedFoodItems';
 
 export default function Order() {
     const generateOrderNumber = () => Math.floor(100000 + Math.random() * 900000).toString();
@@ -24,9 +27,33 @@ export default function Order() {
         resetFormControls
     } = useForm(getFreshModelObject);
 
+
     return (
-        <OrderForm
-        {... {values, errors, handleInputChange }}
-        />
+        <Grid container spacing={2}>
+            <Grid item xs={12}>
+               <OrderForm
+               {... {values, 
+                     setValues,
+                     errors, 
+                     setErrors,
+                     handleInputChange,
+                     resetFormControls }}
+               />
+             </Grid>
+            <Grid item xs={6}>
+                <SearchFoodItems
+                {...{
+                    values,
+                    setValues
+                }}
+                />
+            </Grid>
+            <Grid item xs={6}>
+                <OrderedFoodItems
+                {...{values,
+                    setValues}}
+                />
+            </Grid>
+        </Grid>
     )
 }

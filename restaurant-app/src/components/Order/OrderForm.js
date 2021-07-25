@@ -1,12 +1,14 @@
-import React, {useState} from 'react'
+import React, {useState, useEffect} from 'react'
 import Form from '../../layouts/Form';
 import { ButtonGroup, Grid, InputAdornment, makeStyles, Button as MuiButton } from '@material-ui/core';
 import {Input, Select, Button} from '../../controls';
 import ReplayIcon from '@material-ui/icons/Replay';
 import RestaurantMenuIcon from '@material-ui/icons/RestaurantMenu';
 import ReorderIcon from '@material-ui/icons/Reorder';
-
-
+import { createAPIEndpoint , ENDPOINTS } from "../../api/index.js";
+import {roundTo2DecimalPoint} from "../../utils";
+import Popup from '../../layouts/Popup'; 
+import OrderList from './OrderList';
 
 
 const pMethods = [
@@ -38,10 +40,60 @@ const useStyles = makeStyles(theme => ({
 
 export default function OrderForm(props) {
 
-    const {values, errors, handleInputChange} = props;
+    const {values, setValues, errors, setErrors, handleInputChange, resetFormControls} = props;
     const classes = useStyles();
+    const [customerList, setCustomerList] = useState([]);
+    const [orderListVisibility, setOrderListVisibility] = useState(false);
+
+    useEffect(() => {
+        createAPIEndpoint(ENDPOINTS.CUSTOMER).fetchAll()
+        .then(res => {
+            let customerList = res.data.map(item => ({
+                id: item.customerID,
+                title: item.customerName
+            }));
+            customerList = [{id: 0, title : 'Select'}].concat(customerList);
+            setCustomerList(customerList);
+        })
+        .catch(err => console.log(err))
+    }, [])
+
+
+    useEffect(() => {
+       let gTotal = values.orderDetails.reduce((tempTotal, item) => {
+           return tempTotal + (item.quantity * item.foodItemPrice);
+       }, 0);
+       setValues({
+           ...values,
+           gTotal: roundTo2DecimalPoint(gTotal)
+       })
+    }, [JSON.stringify(values.orderDetails)]);
+
+    const validateForm = ()=> {
+        let temp = {};
+        temp.customerId = values.customerId != 0? "" : "This field is required.";
+        temp.pMethod = values.pMethod != "none"? "" : "This field is required.";
+        temp.orderDetails = values.orderDetails.length !=0 ?"": "This field is required.";
+        setErrors({...temp});
+        return Object.values(temp).every(x=> x==="");
+    }
+    const submitOrder = e => {
+      e.preventDefault();
+      if(validateForm()){
+        createAPIEndpoint(ENDPOINTS.ORDER).create(values)
+        .then(res => {
+            resetFormControls();
+        })
+        .catch(err => console.log(err))
+      }
+  }
+
+  const openListOfOrders = () =>{
+    setOrderListVisibility(true);
+  }
     return (
-        <Form>
+        <>
+        <Form onSubmit = {submitOrder}>
             <Grid container>
                 <Grid item xs = {6}>
                     <Input
@@ -60,13 +112,8 @@ export default function OrderForm(props) {
                     name = "customerId"
                     value = {values.customerId}
                     onChange= {handleInputChange}
-                    options = {[
-                        {id: 0, title : 'Select'},
-                        {id: 1, title : 'Customer1'},
-                        {id: 2, title : 'Customer2'},
-                        {id: 3, title : 'Customer3'},
-                        {id: 4, title : 'Customer4'},
-                    ]}
+                    options = {customerList}
+                    error ={errors.customerId}
                     />
                         
                 </Grid>
@@ -77,6 +124,7 @@ export default function OrderForm(props) {
                     value = {values.pMethod}
                     options = {pMethods}
                     onChange= {handleInputChange}
+                    error = {errors.pMethod}
                     />
                 <Input
                     disabled
@@ -102,6 +150,7 @@ export default function OrderForm(props) {
                     </ButtonGroup>
                     <Button
                     size = "large"
+                    onClick = {openListOfOrders}
                     startIcon = {<ReorderIcon />}
                      >
                         Orders
@@ -109,5 +158,12 @@ export default function OrderForm(props) {
                 </Grid>
             </Grid>
         </Form>
+        <Popup
+        title= "List of Orders"
+        openPopup={orderListVisibility}
+        setOpenPopup={setOrderListVisibility}>
+            <OrderList/>
+        </Popup>
+        </>
     )
 }
